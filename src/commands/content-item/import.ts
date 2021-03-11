@@ -630,8 +630,8 @@ const prepareContentForImport = async (
   return tree;
 };
 
-const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping): void => {
-  const id = mapping.getContentItem(dep.dependancy.id) || dep.dependancy.id;
+const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping, fallback: string | undefined): void => {
+  const id = mapping.getContentItem(dep.dependancy.id) || fallback;
   if (dep.dependancy._meta.schema === '_hierarchy') {
     dep.owner.content.body._meta.hierarchy.parentId = id;
   } else {
@@ -661,7 +661,7 @@ const importTree = async (
 
       // Replace any dependancies with the existing mapping.
       item.dependancies.forEach(dep => {
-        rewriteDependancy(dep, mapping);
+        rewriteDependancy(dep, mapping, dep.dependancy.id);
       });
 
       const originalId = content.id;
@@ -736,7 +736,7 @@ const importTree = async (
       const content = item.owner.content;
 
       item.dependancies.forEach(dep => {
-        rewriteDependancy(dep, mapping);
+        rewriteDependancy(dep, mapping, undefined);
       });
 
       const originalId = content.id;

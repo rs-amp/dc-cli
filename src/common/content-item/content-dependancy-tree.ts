@@ -156,7 +156,7 @@ export class ContentDependancyTree {
       body.forEach((contained, index) => {
         this.searchObjectForContentDependancies(item, contained, result, body, index);
       });
-    } else {
+    } else if (body != null) {
       const allPropertyNames = Object.getOwnPropertyNames(body);
       // Does this object match the pattern expected for a content item or reference?
       if (

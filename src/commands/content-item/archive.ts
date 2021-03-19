@@ -9,6 +9,7 @@ import { ContentItem, DynamicContent } from 'dc-management-sdk-js';
 import { equalsOrRegex } from '../../common/filter/filter';
 import { getDefaultLogPath } from '../../common/log-helpers';
 import { Status } from '../../common/dc-management-sdk-js/resource-status';
+import { FileLog } from '../../common/file-log';
 
 export const command = 'archive [id]';
 
@@ -229,7 +230,7 @@ export const processItems = async ({
   contentItems: ContentItem[];
   force?: boolean;
   silent?: boolean;
-  logFile?: string;
+  logFile?: string | FileLog;
   allContent: boolean;
   missingContent: boolean;
   ignoreError?: boolean;
@@ -253,15 +254,24 @@ export const processItems = async ({
   }
 
   const timestamp = Date.now().toString();
-  const log = new ArchiveLog(`Content Items Archive Log - ${timestamp}\n`);
+  const log = typeof logFile === 'object' ? logFile : new ArchiveLog(`Content Items Archive Log - ${timestamp}\n`);
 
   let successCount = 0;
 
   for (let i = 0; i < contentItems.length; i++) {
     try {
+      const deliveryKey = contentItems[i].body._meta.deliveryKey;
+      let args = contentItems[i].id;
+      if (deliveryKey) {
+        contentItems[i].body._meta.deliveryKey = null;
+
+        contentItems[i] = await contentItems[i].related.update(contentItems[i]);
+
+        args += ` ${deliveryKey}`;
+      }
       await contentItems[i].related.archive();
 
-      log.addAction('ARCHIVE', `${contentItems[i].id}\n`);
+      log.addAction('ARCHIVE', `${args}\n`);
       successCount++;
     } catch (e) {
       log.addComment(`ARCHIVE FAILED: ${contentItems[i].id}`);
@@ -276,7 +286,7 @@ export const processItems = async ({
     }
   }
 
-  if (!silent && logFile) {
+  if (!silent && typeof logFile === 'string') {
     await log.writeToFile(logFile.replace('<DATE>', timestamp));
   }
 
@@ -287,7 +297,7 @@ export const handler = async (argv: Arguments<ArchiveOptions & ConfigurationPara
   const { id, logFile, force, silent, ignoreError, hubId, revertLog, repoId, folderId, name, contentType } = argv;
   const client = dynamicContentClientFactory(argv);
 
-  const allContent = !id && !name && !contentType && !revertLog;
+  const allContent = !id && !name && !contentType && !revertLog && !folderId && !repoId;
 
   if (repoId && id) {
     console.log('ID of content item is specified, ignoring repository ID');

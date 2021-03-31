@@ -673,12 +673,22 @@ const prepareContentForImport = async (
   return tree;
 };
 
-const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping): void => {
-  const id = mapping.getContentItem(dep.dependancy.id) || dep.dependancy.id;
+const rewriteDependancy = (dep: ContentDependancyInfo, mapping: ContentMapping, allowNull: boolean): void => {
+  let id = mapping.getContentItem(dep.dependancy.id);
+
+  if (id == null && !allowNull) {
+    id = dep.dependancy.id;
+  }
+
   if (dep.dependancy._meta.schema === '_hierarchy') {
     dep.owner.content.body._meta.hierarchy.parentId = id;
   } else {
-    dep.dependancy.id = id;
+    if (id == null) {
+      delete dep.parent[dep.index];
+    } else {
+      dep.parent[dep.index] = dep.dependancy;
+      dep.dependancy.id = id;
+    }
   }
 };
 
@@ -704,7 +714,7 @@ const importTree = async (
 
       // Replace any dependancies with the existing mapping.
       item.dependancies.forEach(dep => {
-        rewriteDependancy(dep, mapping);
+        rewriteDependancy(dep, mapping, false);
       });
 
       const originalId = content.id;
@@ -779,7 +789,7 @@ const importTree = async (
       const content = item.owner.content;
 
       item.dependancies.forEach(dep => {
-        rewriteDependancy(dep, mapping);
+        rewriteDependancy(dep, mapping, true);
       });
 
       const originalId = content.id;
@@ -813,6 +823,7 @@ const importTree = async (
 
         newDependants[i] = newItem;
         mapping.registerContentItem(originalId as string, newItem.id as string);
+        mapping.registerContentItem(newItem.id as string, newItem.id as string);
       } else {
         if (itemShouldPublish(content) && (newItem.version != oldVersion || argv.republish)) {
           publishable.push({ item: newItem, node: item });

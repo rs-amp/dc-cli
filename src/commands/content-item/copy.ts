@@ -70,6 +70,12 @@ export const builder = (yargs: Argv): void => {
       describe: "Destination account's secret. Must be used alongside dstClientId."
     })
 
+    .option('facet', {
+      type: 'string',
+      describe:
+        "Copy content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
+    })
+
     .option('mapFile', {
       type: 'string',
       describe:
@@ -194,8 +200,7 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
         folderId: argv.srcFolder,
         repoId: argv.srcRepo,
-        schemaId: argv.schemaId,
-        name: argv.name,
+        facet: argv.facet,
         logFile: log,
 
         dir: tempFolder,

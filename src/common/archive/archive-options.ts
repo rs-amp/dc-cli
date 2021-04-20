@@ -4,8 +4,9 @@ export default interface ArchiveOptions {
   revertLog?: string;
   repoId?: string | string[];
   folderId?: string | string[];
-  name?: string | string[];
-  contentType?: string | string[];
+
+  facet?: string;
+
   logFile?: string;
   force?: boolean;
   silent?: boolean;

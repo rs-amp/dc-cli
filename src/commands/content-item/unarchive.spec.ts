@@ -312,16 +312,10 @@ describe('content-item unarchive command', () => {
         requiresArg: false
       });
 
-      expect(spyOption).toHaveBeenCalledWith('name', {
+      expect(spyOption).toHaveBeenCalledWith('facet', {
         type: 'string',
         describe:
-          'The name of a Content Item to be unarchived.\nA regex can be provided to select multiple items with similar or matching names (eg /.header/).\nA single --name option may be given to match a single content item pattern.\nMultiple --name options may be given to match multiple content items patterns at the same time, or even multiple regex.'
-      });
-
-      expect(spyOption).toHaveBeenCalledWith('contentType', {
-        type: 'string',
-        describe:
-          'A pattern which will only unarchive content items with a matching Content Type Schema ID. A single --contentType option may be given to match a single schema id pattern.\\nMultiple --contentType options may be given to match multiple schema patterns at the same time.'
+          "Unarchive content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
       });
 
       expect(spyOption).toHaveBeenCalledWith('revertLog', {
@@ -492,7 +486,7 @@ describe('content-item unarchive command', () => {
         ...yargArgs,
         ...config,
         folderId: 'folder1',
-        name: 'item1'
+        facet: 'name:item1'
       };
       await handler(argv);
 
@@ -501,7 +495,7 @@ describe('content-item unarchive command', () => {
       expect(mockUnarchive).toBeCalledTimes(1);
     });
 
-    it('should ented', async () => {
+    it('should exit if a facet AND id are provided', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (readline as any).setResponses(['y']);
 
@@ -511,7 +505,7 @@ describe('content-item unarchive command', () => {
         ...yargArgs,
         ...config,
         id: '123',
-        name: 'item1'
+        facet: 'name:item1'
       };
       await handler(argv);
 
@@ -530,7 +524,7 @@ describe('content-item unarchive command', () => {
         ...yargArgs,
         ...config,
         folderId: 'folder1',
-        name: ['item3']
+        facet: 'name:item3'
       };
       await handler(argv);
 
@@ -549,7 +543,7 @@ describe('content-item unarchive command', () => {
         ...yargArgs,
         ...config,
         folderId: 'folder1',
-        name: 'item1'
+        facet: 'name:item1'
       };
       await handler(argv);
 
@@ -567,7 +561,7 @@ describe('content-item unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        name: '/item/'
+        facet: 'name:/item/'
       };
       await handler(argv);
 
@@ -586,7 +580,7 @@ describe('content-item unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        contentType: 'http://test.com'
+        facet: 'schema:http://test.com'
       };
       await handler(argv);
 
@@ -605,7 +599,7 @@ describe('content-item unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        contentType: '/test/'
+        facet: 'schema:/test/'
       };
       await handler(argv);
 
@@ -624,7 +618,7 @@ describe('content-item unarchive command', () => {
       const argv = {
         ...yargArgs,
         ...config,
-        contentType: '/test123/'
+        facet: 'schema:/test123/'
       };
       await handler(argv);
 
@@ -895,7 +889,7 @@ describe('content-item unarchive command', () => {
     it('should filter content items by content type', async () => {
       const result = await filterContentItems({
         contentItems,
-        contentType: '/test.com/'
+        facet: 'schema:/test.com/'
       });
 
       expect(result).toMatchObject({
@@ -907,7 +901,7 @@ describe('content-item unarchive command', () => {
     it('should filter content items by content types', async () => {
       const result = await filterContentItems({
         contentItems,
-        contentType: ['/test.com/', '/test1.com/']
+        facet: 'schema:/test.?\\.com/'
       });
 
       expect(result).toMatchObject({
@@ -919,7 +913,7 @@ describe('content-item unarchive command', () => {
     it('should filter content items by name', async () => {
       const result = await filterContentItems({
         contentItems,
-        name: ['/item1/']
+        facet: 'name:/item1/'
       });
 
       if (result) {

@@ -61,16 +61,10 @@ describe('content-item export command', () => {
           'Export content from within a given folder. Directory structure will start at the specified folder. Can be used in addition to repoId.'
       });
 
-      expect(spyOption).toHaveBeenCalledWith('schemaId', {
+      expect(spyOption).toHaveBeenCalledWith('facet', {
         type: 'string',
         describe:
-          'Export content with a given or matching Schema ID. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
-      });
-
-      expect(spyOption).toHaveBeenCalledWith('name', {
-        type: 'string',
-        describe:
-          'Export content with a given or matching Name. A regex can be provided, surrounded with forward slashes. Can be used in combination with other filters.'
+          "Export content matching the given facets. Provide facets in the format 'label:example name,locale:en-GB', spaces are allowed between values. A regex can be provided for text filters, surrounded with forward slashes. For more examples, see the readme."
       });
 
       expect(spyOption).toHaveBeenCalledWith('publish', {
@@ -302,7 +296,7 @@ describe('content-item export command', () => {
         ...config,
         dir: 'temp/export/typeSpecific/folder1',
         folderId: 'folder1',
-        schemaId: '/typeMatch/'
+        facet: 'schema:/typeMatch/'
       };
       await handler(argv);
 
@@ -338,7 +332,7 @@ describe('content-item export command', () => {
         ...config,
         dir: 'temp/export/nameSpecific/folder1',
         folderId: 'folder1',
-        name: '/nameMatch/'
+        facet: 'name:/nameMatch/'
       };
       await handler(argv);
 
@@ -396,8 +390,7 @@ describe('content-item export command', () => {
         dir: 'temp/export/allFilter/',
         repoId: 'repo2',
         folderId: 'folder1', // folder1 in addition to repo2
-        name: '/nameMatch/',
-        schemaId: '/typeMatch/' // only content that with name containing nameMatch and type containing typeMatch
+        facet: 'name:/nameMatch/,schema:/typeMatch/' // only content that with name containing nameMatch and type containing typeMatch
       };
       await handler(argv);
 

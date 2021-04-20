@@ -6,8 +6,9 @@ export default interface UnarchiveOptions {
   ignoreError?: boolean;
   repoId?: string | string[];
   folderId?: string | string[];
-  name?: string | string[];
-  contentType?: string | string[];
+
+  facet?: string;
+
   force?: boolean;
   logFile?: string;
 }

@@ -14,7 +14,6 @@ import { ExportItemBuilderOptions } from '../../interfaces/export-item-builder-o
 import { ConfigurationParameters } from '../configure';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
 import { getDefaultLogPath } from '../../common/log-helpers';
-import * as copyConfig from '../../common/content-item/copy-config';
 import { FileLog } from '../../common/file-log';
 
 jest.mock('../../services/dynamic-content-client-factory');
@@ -116,12 +115,6 @@ describe('content-item copy command', () => {
         describe: 'Skip any content item that has one or more missing dependancy.'
       });
 
-      expect(spyOption).toHaveBeenCalledWith('copyConfig', {
-        type: 'string',
-        describe:
-          'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
-      });
-
       expect(spyOption).toHaveBeenCalledWith('lastPublish', {
         type: 'boolean',
         boolean: true,
@@ -193,8 +186,6 @@ describe('content-item copy command', () => {
       clearArray(exportCalls);
       clearArray(importCalls);
       clearArray(revertCalls);
-
-      jest.spyOn(copyConfig, 'loadCopyConfig');
     });
 
     it('should use getDefaultLogPath for LOG_FILENAME with process.platform as default', function() {
@@ -343,114 +334,24 @@ describe('content-item copy command', () => {
       expect(importCalls.length).toEqual(2);
     });
 
-    it('should exit when copyConfig is specified, but invalid (returns null)', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const exportCalls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = (exporter as any).calls;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const importCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (importer as any).calls;
+    it('should not close the log if provided as part of the arguments', async () => {
+      const log = new FileLog();
 
-      (copyConfig.loadCopyConfig as jest.Mock).mockResolvedValueOnce(null);
-
-      // TODO: mock handlers for export and import
       const argv = {
         ...yargArgs,
         ...config,
 
-        srcRepo: 'repo1-id',
-
-        dstRepo: 'repo2-id',
+        hubId: 'hub2-id',
+        clientId: 'acc2-id',
+        clientSecret: 'acc2-secret',
 
         dstHubId: 'hub2-id',
         dstClientId: 'acc2-id',
         dstSecret: 'acc2-secret',
 
-        copyConfig: 'invalid.json',
-        logFile: new FileLog()
-      };
-      await handler(argv);
-
-      expect(exportCalls.length).toEqual(0);
-      expect(importCalls.length).toEqual(0);
-    });
-
-    it('should call both export and import with the copyConfig when given', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const exportCalls: Arguments<ExportItemBuilderOptions & ConfigurationParameters>[] = (exporter as any).calls;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const importCalls: Arguments<ImportItemBuilderOptions & ConfigurationParameters>[] = (importer as any).calls;
-
-      const copyConfig = {
-        srcHubId: 'hub2-id',
-        srcClientId: 'acc2-id',
-        srcSecret: 'acc2-secret',
-
-        dstHubId: 'hub2-id',
-        dstClientId: 'acc2-id',
-        dstSecret: 'acc2-secret'
-      };
-
-      // TODO: mock handlers for export and import
-      const argv = {
-        ...yargArgs,
-        ...config,
-
-        srcRepo: 'repo1-id',
-
-        dstRepo: 'repo2-id',
-
-        copyConfig: copyConfig,
-
-        schemaId: '/./',
-        name: '/./',
-
-        mapFile: 'map.json',
-        force: false,
-        validate: false,
-        skipIncomplete: false
-      };
-      await handler(argv);
-
-      expect(exportCalls.length).toEqual(1);
-      expect(importCalls.length).toEqual(1);
-
-      expect(exportCalls[0].clientId).toEqual(copyConfig.srcClientId);
-      expect(exportCalls[0].clientSecret).toEqual(copyConfig.srcSecret);
-      expect(exportCalls[0].hubId).toEqual(copyConfig.srcHubId);
-      expect(exportCalls[0].schemaId).toEqual(argv.schemaId);
-      expect(exportCalls[0].name).toEqual(argv.name);
-      expect(exportCalls[0].repoId).toEqual(argv.srcRepo);
-
-      expect(importCalls[0].clientId).toEqual(copyConfig.dstClientId);
-      expect(importCalls[0].clientSecret).toEqual(copyConfig.dstSecret);
-      expect(importCalls[0].hubId).toEqual(copyConfig.dstHubId);
-      expect(importCalls[0].baseRepo).toEqual(argv.dstRepo);
-
-      expect(importCalls[0].mapFile).toEqual(argv.mapFile);
-      expect(importCalls[0].force).toEqual(argv.force);
-      expect(importCalls[0].validate).toEqual(argv.validate);
-      expect(importCalls[0].skipIncomplete).toEqual(argv.skipIncomplete);
-    });
-
-    it('should not close the log if provided as part of the arguments', async () => {
-      const copyConfig = {
-        srcHubId: 'hub2-id',
-        srcClientId: 'acc2-id',
-        srcSecret: 'acc2-secret',
-
-        dstHubId: 'hub2-id',
-        dstClientId: 'acc2-id',
-        dstSecret: 'acc2-secret'
-      };
-
-      const log = new FileLog();
-      const argv = {
-        ...yargArgs,
-        ...config,
-
-        copyConfig: copyConfig,
-
         logFile: log
       };
+
       await handler(argv);
 
       expect(log.closed).toBeFalsy();

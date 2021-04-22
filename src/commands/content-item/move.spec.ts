@@ -19,7 +19,6 @@ import { ItemTemplate, MockContent } from '../../common/dc-management-sdk-js/moc
 import dynamicContentClientFactory from '../../services/dynamic-content-client-factory';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { getDefaultLogPath } from '../../common/log-helpers';
-import * as copyConfig from '../../common/content-item/copy-config';
 import { ImportItemBuilderOptions } from '../../interfaces/import-item-builder-options.interface';
 
 jest.mock('../../services/dynamic-content-client-factory');
@@ -166,8 +165,6 @@ describe('content-item move command', () => {
     beforeEach(() => {
       const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
       clearArray(copyCalls);
-
-      jest.spyOn(copyConfig, 'loadCopyConfig');
     });
 
     async function createLog(logFileName: string, log: string): Promise<void> {
@@ -475,47 +472,6 @@ describe('content-item move command', () => {
       expect(argv.exportedIds).toEqual(exportIds);
 
       expect(mockContent.metrics.itemsArchived).toEqual(0);
-    });
-
-    // should return early when copy fails, without archiving any content from the source
-    it('should abort the move when copy config fails to load', async () => {
-      const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
-
-      (copyConfig.loadCopyConfig as jest.Mock).mockResolvedValueOnce(null);
-
-      const argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters> = {
-        ...yargArgs,
-        ...config,
-
-        dstHubId: 'hub2-id',
-        dstClientId: 'acc2-id',
-        dstSecret: 'acc2-secret',
-
-        logFile: LOG_FILENAME()
-      };
-      await handler(argv);
-
-      expect(copyCalls.length).toEqual(0);
-    });
-
-    it('should abort the revert when copy config fails to load', async () => {
-      const copyCalls: Arguments<CopyItemBuilderOptions & ConfigurationParameters>[] = copierAny.calls;
-
-      (copyConfig.loadCopyConfig as jest.Mock).mockResolvedValueOnce(null);
-
-      const argv: Arguments<CopyItemBuilderOptions & ConfigurationParameters> = {
-        ...yargArgs,
-        ...config,
-
-        dstHubId: 'hub2-id',
-        dstClientId: 'acc2-id',
-        dstSecret: 'acc2-secret',
-
-        revertLog: 'temp/move/abort.txt'
-      };
-      await handler(argv);
-
-      expect(copyCalls.length).toEqual(0);
     });
   });
 });

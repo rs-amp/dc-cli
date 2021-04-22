@@ -10,7 +10,6 @@ import { handler as importer } from './import';
 import { ensureDirectoryExists } from '../../common/import/directory-utils';
 import { FileLog } from '../../common/file-log';
 import { revert } from './import-revert';
-import { loadCopyConfig } from '../../common/content-item/copy-config';
 
 export function getTempFolder(name: string, platform: string = process.platform): string {
   return join(process.env[platform == 'win32' ? 'USERPROFILE' : 'HOME'] || __dirname, '.amplience', `copy-${name}/`);
@@ -97,12 +96,6 @@ export const builder = (yargs: Argv): void => {
       describe: 'Skip any content item that has one or more missing dependancy.'
     })
 
-    .option('copyConfig', {
-      type: 'string',
-      describe:
-        'Path to a JSON configuration file for source/destination account. If the given file does not exist, it will be generated from the arguments.'
-    })
-
     .option('lastPublish', {
       type: 'boolean',
       boolean: true,
@@ -160,13 +153,11 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
   let result = false;
 
-  const copyConfig = typeof argv.copyConfig !== 'object' ? await loadCopyConfig(argv, log) : argv.copyConfig;
+  const { hubId, clientId, clientSecret } = argv;
 
-  if (copyConfig == null) {
-    return false;
-  }
-
-  const { srcHubId, srcClientId, srcSecret, dstHubId, dstClientId, dstSecret } = copyConfig;
+  const dstHubId = argv.dstHubId || hubId;
+  const dstClientId = argv.dstClientId || clientId;
+  const dstSecret = argv.dstSecret || clientSecret;
 
   if (argv.revertLog) {
     result = await revert({
@@ -188,9 +179,9 @@ export const handler = async (argv: Arguments<CopyItemBuilderOptions & Configura
 
       await exporter({
         ...yargArgs,
-        hubId: srcHubId,
-        clientId: srcClientId,
-        clientSecret: srcSecret,
+        hubId: hubId,
+        clientId: clientId,
+        clientSecret: clientSecret,
 
         folderId: argv.srcFolder,
         repoId: argv.srcRepo,

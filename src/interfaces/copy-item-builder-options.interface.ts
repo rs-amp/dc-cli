@@ -1,4 +1,3 @@
-import { CopyConfig } from '../common/content-item/copy-config';
 import { FileLog } from '../common/file-log';
 
 export interface CopyItemBuilderOptions {
@@ -21,7 +20,6 @@ export interface CopyItemBuilderOptions {
   skipIncomplete?: boolean;
   media?: boolean;
   logFile?: string | FileLog;
-  copyConfig?: string | CopyConfig;
 
   revertLog?: string | FileLog;
 

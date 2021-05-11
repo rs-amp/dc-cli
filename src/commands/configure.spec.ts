@@ -29,7 +29,6 @@ describe('configure command', function() {
       .mockReturnValueOnce(false);
     jest.spyOn(fs, 'mkdirSync').mockReturnValueOnce(undefined);
     jest.spyOn(fs, 'writeFileSync').mockReturnValueOnce(undefined);
-
     handler({ ...yargArgs, ...configFixture });
 
     expect(fs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/\.amplience$/));
@@ -129,6 +128,43 @@ describe('configure command', function() {
     expect(result).toEqual({});
     expect(fs.existsSync).toHaveBeenCalledWith(configFile);
     expect(fs.readFileSync).not.toHaveBeenCalled();
+  });
+
+  it('should exit the process if the config file is present, but invalid', () => {
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    jest.spyOn(fs, 'readFileSync').mockReturnValueOnce('{invalid json}');
+    const mockError = jest.spyOn(console, 'error').mockReturnValueOnce(undefined);
+    const mockExit = jest.spyOn(process, 'exit').mockReturnValueOnce(undefined as never);
+
+    const configFile = 'config.json';
+    readConfigFile(configFile); // Return value does not matter, as process.exit is called.
+
+    expect(fs.existsSync).toHaveBeenCalledWith(configFile);
+    expect(fs.readFileSync).toHaveBeenCalledWith(configFile, 'utf-8');
+    expect(mockExit).toHaveBeenCalledWith(2);
+    expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
+      "FATAL - Could not parse JSON configuration. Inspect the configuration file at config.json
+      Unexpected token i in JSON at position 1"
+    `);
+  });
+
+  it('should not exit the process if the config file is invalid, but ignoreError is true', () => {
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    jest.spyOn(fs, 'readFileSync').mockReturnValueOnce('{invalid json}');
+    const mockError = jest.spyOn(console, 'error').mockReturnValueOnce(undefined);
+    const mockExit = jest.spyOn(process, 'exit').mockReturnValueOnce(undefined as never);
+
+    const configFile = 'config.json';
+    const result = readConfigFile(configFile, true);
+
+    expect(result).toEqual({});
+    expect(fs.existsSync).toHaveBeenCalledWith(configFile);
+    expect(fs.readFileSync).toHaveBeenCalledWith(configFile, 'utf-8');
+    expect(mockExit).not.toHaveBeenCalled();
+    expect(mockError.mock.calls[0][0]).toMatchInlineSnapshot(`
+      "The configuration file at config.json is invalid, its contents will be ignored.
+      Unexpected token i in JSON at position 1"
+    `);
   });
 
   it('should use USERPROFILE env var for win32', () => {

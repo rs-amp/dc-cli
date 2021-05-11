@@ -74,7 +74,10 @@ export const promptToExportSettings = (filename: string): Promise<boolean> => {
   });
 };
 
-export const nothingExportedExit = (msg = 'Nothing was exported, exiting.\n'): void => {
+export const nothingExportedExit = (msg = 'Nothing was exported, exiting.\n', exit = true): void => {
   process.stdout.write(msg);
-  process.exit(1);
+
+  if (exit) {
+    process.exit(1);
+  }
 };

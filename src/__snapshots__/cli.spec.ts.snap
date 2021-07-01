@@ -11,6 +11,7 @@ Commands:
   dc-cli content-type         Content Type
   dc-cli event                Event
   dc-cli hub                  Hub
+  dc-cli search-index         Search Index
   dc-cli settings             Settings
 
 Options:
